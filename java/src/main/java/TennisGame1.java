@@ -1,10 +1,38 @@
+import java.util.Collections;
+import java.util.Map;
 
 public class TennisGame1 implements TennisGame {
-    
-    private int m_score1 = 0;
-    private int m_score2 = 0;
-    private String player1Name;
-    private String player2Name;
+
+    private static final String LOVE = "Love";
+    private static final String FIFTEEN = "Fifteen";
+    private static final String THIRTY = "Thirty";
+    private static final String FORTY = "Forty";
+    private static final String ALL = "All";
+    private static final String DEUCE = "Deuce";
+    private static final String ADVANTAGE = "Advantage ";
+    private static final String WIN_FOR = "Win for ";
+    private static final String HYPHEN = "-";
+
+    private static Map<Integer, String> tieMap = Collections.unmodifiableMap(
+            Map.of(
+                    0, LOVE + HYPHEN + ALL,
+                    1, FIFTEEN + HYPHEN + ALL,
+                    2, THIRTY + HYPHEN + ALL
+            ));
+
+    private static Map<Integer, String> pointMap = Collections.unmodifiableMap(
+            Map.of(
+                    0, LOVE,
+                    1, FIFTEEN,
+                    2, THIRTY
+            ));
+
+    private final String player1Name;
+    private final String player2Name;
+
+    private int player1Score;
+    private int player2Score;
+    private int absoluteScoreDifference;
 
     public TennisGame1(String player1Name, String player2Name) {
         this.player1Name = player1Name;
@@ -12,65 +40,55 @@ public class TennisGame1 implements TennisGame {
     }
 
     public void wonPoint(String playerName) {
-        if (playerName == "player1")
-            m_score1 += 1;
+        updatePlayerScore(playerName);
+        computeAbsoluteScoreDifference();
+    }
+
+    private void updatePlayerScore(String playerName) {
+        if (player1Name.equals(playerName))
+            player1Score += 1;
         else
-            m_score2 += 1;
+            player2Score += 1;
+    }
+
+    private void computeAbsoluteScoreDifference() {
+        absoluteScoreDifference = Math.abs(player1Score - player2Score);
     }
 
     public String getScore() {
-        String score = "";
-        int tempScore=0;
-        if (m_score1==m_score2)
-        {
-            switch (m_score1)
-            {
-                case 0:
-                        score = "Love-All";
-                    break;
-                case 1:
-                        score = "Fifteen-All";
-                    break;
-                case 2:
-                        score = "Thirty-All";
-                    break;
-                default:
-                        score = "Deuce";
-                    break;
-                
-            }
+        if (absoluteScoreDifference == 0) {
+            return computeTieScore();
+        } else if ((player1Score | player2Score) >= 4 && absoluteScoreDifference == 1) {
+            return computeAdvantageScore();
+        } else if ((player1Score | player2Score) >= 4 && absoluteScoreDifference > 1) {
+            return computeWinScore();
         }
-        else if (m_score1>=4 || m_score2>=4)
-        {
-            int minusResult = m_score1-m_score2;
-            if (minusResult==1) score ="Advantage player1";
-            else if (minusResult ==-1) score ="Advantage player2";
-            else if (minusResult>=2) score = "Win for player1";
-            else score ="Win for player2";
+        return computeScore();
+    }
+
+    private String computeTieScore() {
+        return tieMap.getOrDefault(player1Score, DEUCE);
+    }
+
+    private String computeAdvantageScore() {
+        if (player1Score > player2Score) {
+            return ADVANTAGE + player1Name;
         }
-        else
-        {
-            for (int i=1; i<3; i++)
-            {
-                if (i==1) tempScore = m_score1;
-                else { score+="-"; tempScore = m_score2;}
-                switch(tempScore)
-                {
-                    case 0:
-                        score+="Love";
-                        break;
-                    case 1:
-                        score+="Fifteen";
-                        break;
-                    case 2:
-                        score+="Thirty";
-                        break;
-                    case 3:
-                        score+="Forty";
-                        break;
-                }
-            }
+        return ADVANTAGE + player2Name;
+    }
+
+    private String computeWinScore() {
+        if (player1Score > player2Score) {
+            return WIN_FOR + player1Name;
         }
-        return score;
+        return WIN_FOR + player2Name;
+    }
+
+    private String computeScore() {
+        return getLiteralPlayerScoreFrom(player1Score) + HYPHEN + getLiteralPlayerScoreFrom(player2Score);
+    }
+
+    private String getLiteralPlayerScoreFrom(int numericPlayerScore) {
+        return pointMap.getOrDefault(numericPlayerScore, FORTY);
     }
 }
